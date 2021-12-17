@@ -3,6 +3,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class BookInventory {
     private JComboBox comboBox1;
@@ -18,8 +21,6 @@ public class BookInventory {
 
     static final String USER = "root";
     static final String PASS = "";
-
-    String aujour = "16/12/2021";
 
     public BookInventory() {
             try{
@@ -46,7 +47,7 @@ public class BookInventory {
         validerLEmpruntButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                collecterRep();
+                majDb();
             }
         });
     }
@@ -61,12 +62,6 @@ public class BookInventory {
 
     String idUser, bookTitle, returnDate;
 
-    private void collecterRep(){
-        idUser = comboBox1.getSelectedItem().toString();
-        bookTitle = comboBox2.getSelectedItem().toString();
-        returnDate = textField1.getText();
-    }
-
     private void majDb(){
         try{
             //Open a connection
@@ -76,18 +71,37 @@ public class BookInventory {
             Statement statement = connection.createStatement();
             ResultSet result = statement.executeQuery("SELECT*FROM mytable");
 
-            statement.executeQuery("UPDATE mytable SET ID="+comboBox1.getSelectedItem()+"WHERE NOM_LIVRE ="+comboBox2.getSelectedItem());
-//            statement.executeQuery("INSERT INTO mytable (DATE_RETOUR) VALUE "+comboBox2.getSelectedItem());
-//            statement.executeQuery("INSERT INTO mytable (DATE_EMPRUNT) VALUE "+aujour);
 
-        } catch (SQLException e) {
+            String selectedBook = comboBox2.getSelectedItem().toString();
+            String selectedId = comboBox1.getSelectedItem().toString();
+            String date1Before = textField1.getText();
+            Date date1=new SimpleDateFormat("dd/MM/yyyy").parse(date1Before);
+            java.sql.Date sqlDate1 = new java.sql.Date(date1.getTime());
+            String date2Before = "17/12/2021";
+            Date date2=new SimpleDateFormat("dd/MM/yyyy").parse(date2Before);
+            java.sql.Date aujour = new java.sql.Date(date2.getTime());
+
+            //Db Requests
+            PreparedStatement pstmt = connection.prepareStatement("UPDATE mytable SET ID_UTILISATEUR=? WHERE NOM_LIVRE =?");
+            pstmt.setString(1, selectedId);
+            pstmt.setString(2, selectedBook);
+            pstmt.executeUpdate();
+
+            PreparedStatement pstmt2 = connection.prepareStatement("UPDATE mytable SET DATE_RETOUR=? WHERE NOM_LIVRE =?");
+            pstmt2.setDate(1, sqlDate1);
+            pstmt2.setString(2, comboBox2.getSelectedItem().toString());
+            pstmt2.executeUpdate();
+
+            PreparedStatement pstmt3 = connection.prepareStatement("UPDATE mytable SET DATE_EMPRUNT=?WHERE NOM_LIVRE=?");
+            pstmt3.setDate(1, aujour);
+            pstmt3.setString(2, selectedBook);
+            pstmt3.executeUpdate();
+
+            connection.close();
+
+        } catch (SQLException | ParseException e) {
             System.out.println("Une erreur s'est produite...");
             e.printStackTrace();
         }
     }
-
-
-
-
-
 }
